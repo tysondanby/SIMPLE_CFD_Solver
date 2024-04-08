@@ -6,7 +6,7 @@ include("solve.jl")
 include("postprocessing.jl")
 
 function homework_7()
-    n = 51 #number of pressure nodes
+    n = 201 #number of pressure nodes
     α_P =0.01
     α_u = 0.01
     mdot = 1.0 #A guess
@@ -37,7 +37,6 @@ function homework_7()
     steadysolve_1D!(problem)
     xp,ps = extractpressures(problem)
     xu,us = extractvelocities(problem)
-    p1 = plot(xp,ps,ylims=(0,10))
     mdot = ρ(xu[end])*us[end]*A(xu[end])
 
     function exact(pos)
@@ -45,7 +44,7 @@ function homework_7()
         return 10 - (0.5*ρ(x)*0.44721^2)/(ρ(x)*A(x))^2
     end
 
-    plot!(xp,@. exact(xp))
+    p1 = plot(xp,[ps (@. exact(xp))],ylims=(0,10),xlabel = "Position (m)", ylabel = "Pressure (Pa)",label=["SIMPLE" "Theoretical"])
 
     return [p1],mdot,problem
 end
