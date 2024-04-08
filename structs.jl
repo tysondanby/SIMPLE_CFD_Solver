@@ -5,19 +5,34 @@ abstract type Settings end
 abstract type Mesh end
 abstract type Node end
 
-mutable struct SIMPLEProblem{T1} <: CFDProblem
+abstract type SIMPLEProblem <: CFDProblem end
+
+mutable struct SIMPLEProblem2D{T1} <: SIMPLEProblem
     geometry::GeometryDefinition
-    boundaryconditions::Vector{BoundaryCondition}
+    boundaryconditions#::Vector{BoundaryCondition}
     discretizationsettings::Settings
     mesh::Mesh
     initialpressurefunction::Function
-    constantfunctions::Vector{Function} #Things like rho, nu,k
+    constantfunctions#::Vector{Function} #Things like rho, nu,k
     initialufunction::Function
     initialvfunction::Function
-    sourcefunctions::Vector{Function}
+    sourcefunctions#::Vector{Function}
     pressurerelax::T1
     urelax::T1
     vrelax::T1
+end
+
+mutable struct SIMPLEProblem1D{T1} <: SIMPLEProblem
+    geometry::GeometryDefinition
+    boundaryconditions#::Vector{BoundaryCondition}
+    discretizationsettings::Settings
+    mesh::Mesh
+    initialpressurefunction::Function
+    constantfunctions#::Vector{Function} #Things like rho, nu,k
+    initialufunction::Function
+    sourcefunctions#::Vector{Function}
+    pressurerelax::T1
+    urelax::T1
 end
 
 mutable struct OneDimensionalChannel{T1} <: GeometryDefinition
@@ -77,5 +92,10 @@ mutable struct SIMPLEMesh <: Mesh
     pressurenodes::Vector{PressureNode}
     unodes::Vector{StaggeredNode}
     vnodes::Vector{StaggeredNode}
+end
+
+mutable struct SIMPLEMesh1D <: Mesh
+    pressurenodes::Vector{PressureNode}
+    unodes::Vector{StaggeredNode}
 end
 
