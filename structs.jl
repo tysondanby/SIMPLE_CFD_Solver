@@ -40,6 +40,11 @@ mutable struct OneDimensionalChannel{T1} <: GeometryDefinition
     areafunction::Function
 end
 
+mutable struct TwoDimensionalChannel{T1} <: GeometryDefinition
+    length::T1
+    height::T1
+end
+
 mutable struct ConstantBoundaryCondition{T1} <: BoundaryCondition
     value::String #"P" or "u" or "v"
     position::Vector{T1}
@@ -55,8 +60,19 @@ mutable struct PlanarBoundaryCondition{T1} <: BoundaryCondition
     value3::T1
 end
 
+mutable struct LabelBoundaryCondition <: BoundaryCondition
+    name
+    value
+end
+
 mutable struct OneDimensionalMesher <: Settings
     n::Int #Number of principal nodes
+    spacingfunction::Function #A one to one function, takes in evenly spaced values on 0:1 and makes them into nondimentional node positions.
+end
+
+mutable struct TwoDimensionalMesher <: Settings
+    n::Int #Number of principal nodes
+    m::Int
     spacingfunction::Function #A one to one function, takes in evenly spaced values on 0:1 and makes them into nondimentional node positions.
 end
 

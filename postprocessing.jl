@@ -19,3 +19,33 @@ function extractvelocities(p::SIMPLEProblem1D)
     end
     return xs,velocities
 end
+
+function extractvelocities(p::SIMPLEProblem2D)
+    n = p.discretizationsettings.n
+    m = p.discretizationsettings.m
+    us = zeros(m,n+1)
+    vs = zeros(m+1,n)
+    for i = m:-1:1
+        for j = 1:1:n+1
+            us[i,j] = p.mesh.unodes[(j-1)*m+i].value
+        end
+    end
+    for i = m+1:-1:1
+        for j = 1:1:n
+            vs[i,j] = p.mesh.vnodes[(j-1)*(m+1)+i].value
+        end
+    end
+    return us,vs
+end
+
+function extractpressures(p::SIMPLEProblem2D)
+    n = p.discretizationsettings.n
+    m = p.discretizationsettings.m
+    Ps = zeros(m,n)
+    for i = m:-1:1
+        for j = 1:1:n
+            Ps[i,j] = p.mesh.pressurenodes[(j-1)*m+i].value
+        end
+    end
+    return Ps
+end
