@@ -60,11 +60,11 @@ entrance = LabelBoundaryCondition("Left",uin)
 top = LabelBoundaryCondition("Top",0.0)
 bottom = LabelBoundaryCondition("Bottom",0.0)
 outlet = LabelBoundaryCondition("Right",P0)
-n = 11
-m = 10
-α_P =0.01
-α_u = 0.01
-α_v = 0.01
+n = 40
+m = 16
+α_P =0.0005
+α_u = 0.0005
+α_v = 0.0005
 
 function ρ(x)
     return 1000.0

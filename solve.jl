@@ -192,18 +192,35 @@ function steadysolve_2D!(p::SIMPLEProblem)
     deltax = norm(p.mesh.unodes[1].position - p.mesh.unodes[1+m].position)
     convergencecriteria = 1.0
     itters = 0#itters < 3#
-    while itters < 100#convergencecriteria > 1.0E-6 #while not converged TODO
+    nu = length(ulocations)
+    Au = zeros(nu,nu)
+    bu = zeros(nu,1)
+    du = zeros(nu)
+    Su = zeros(nu)
+    
+    nv = length(vlocations)
+    Av = zeros(nv,nv)
+    bv = zeros(nv,1)
+    dv = zeros(nv)
+    Sv = zeros(nv)
+
+    np = length(pressurelocations)
+    Ap = zeros(np,np)
+    bp = zeros(np,1)
+    
+    ustar = zeros(nu)
+    vstar = zeros(nv)
+    pprime = zeros(np)
+    vcalculated = similar(vstar)
+    deltaus = similar(ustar)
+    ucalculated = similar(ustar)
+
+
+    while itters < 1000#convergencecriteria > 1.0E-6 #while not converged TODO
         
         itters = itters +1
-        #println()
-        #println("Begin itteration $itters")
         #Find constants for momentum equations meanwhile finding parameter d at each (staggered) node.
         #Calculate velocities
-        nu = length(ulocations)
-        Au = zeros(nu,nu)
-        bu = zeros(nu,1)
-        du = zeros(nu)
-        Su = zeros(nu)
         
         for i = 1:1:nu
             nodeP = p.mesh.unodes[i]
@@ -217,9 +234,8 @@ function steadysolve_2D!(p::SIMPLEProblem)
                 nodew = p.mesh.pressurenodes[nodeP.backwardneighbor]
                 Au[i,i] = 1.0
                 Au[i,nodew.neighborW] = -1.0
-                du[i] = 0.0
+                du[i] = 0.0#du[i-m]#
             elseif nodeP.boundarycondition == 2 #Top
-                #TODO
                 nodew = p.mesh.pressurenodes[nodeP.backwardneighbor]
                 nodee = p.mesh.pressurenodes[nodeP.forwardneighbor]
                 nodeW = p.mesh.unodes[nodew.neighborW]
@@ -307,11 +323,6 @@ function steadysolve_2D!(p::SIMPLEProblem)
         end
         ustar = Au \ bu
 
-        nv = length(vlocations)
-        Av = zeros(nv,nv)
-        bv = zeros(nv,1)
-        dv = zeros(nv)
-        Sv = zeros(nv)
         
         for i = 1:1:nv
             nodeP = p.mesh.vnodes[i]
@@ -348,17 +359,14 @@ function steadysolve_2D!(p::SIMPLEProblem)
                 Av[i,noden.neighborN] = -an
                 Av[i,nodes.neighborS] = -as
                 Av[i,i] = ap
-                bv[i] = Su[i]
-                dv[i] = deltay/ap
+                bv[i] = Sv[i]
+                dv[i] = deltax/ap
             end
         end
         vstar = Av \ bv
         
         #Find constants for pressure correction equations (at staggered nodes)
-        n = length(pressurelocations)
-        Ap = zeros(n,n)
-        bp = zeros(n,1)
-        for i = 1:1:n
+        for i = 1:1:np
             nodeP = p.mesh.pressurenodes[i]
             P = nodeP.position
             if nodeP.boundarycondition == 4
@@ -379,54 +387,53 @@ function steadysolve_2D!(p::SIMPLEProblem)
                 Fnstar = rho*vstar[nodeP.neighborN]*deltax
                 ap = aw + ae + an + as
                 if nodeWindex == 0 #TODO: verify that these if statements do what you think they do
-                    ap = ap - aw
-                else
+                    ap = ap -2*aw
+                    ae = ae + aw
+                    Ap[i,nodeEindex] = -ae
+                elseif nodeEindex == 0
+                    ap = ap -2*ae
+                    aw = aw + ae
                     Ap[i,nodeWindex] = -aw
-                end
-                if nodeEindex == 0
-                    ap = ap - ae
                 else
                     Ap[i,nodeEindex] = -ae
+                    Ap[i,nodeWindex] = -aw
                 end
-                if nodeNindex == 0
-                    ap = ap - an
-                else
+                if nodeSindex == 0 #TODO: verify that these if statements do what you think they do
+                    ap = ap -2*as
+                    an = an + as
                     Ap[i,nodeNindex] = -an
-                end
-                if nodeSindex == 0
-                    ap = ap - as
+                elseif nodeNindex == 0
+                    ap = ap -2*an
+                    as = as + an
+                    Ap[i,nodeSindex] = -as
                 else
                     Ap[i,nodeSindex] = -as
+                    Ap[i,nodeNindex] = -an
                 end
                 Ap[i,i] = ap
-                bp[i] = Fwstar - Festar + Fsstar - Fnstar
+                bp[i] = Fwstar - Festar  + Fsstar - Fnstar
             end
         end
         pprime = Ap \ bp
-        #println("Coefficient matrix for p'")
-        #println(Ap)
-        #println("b matrix")
-        #println(b)
-        #println("p'")
-        #println(pprime)
-        #Correct pressures (at pressure nodes)
+
+
         for i = 1:1:length(p.mesh.pressurenodes)
             p.mesh.pressurenodes[i].value = p.mesh.pressurenodes[i].value + p.pressurerelax*pprime[i]
         end
         
         #Correct velocities (at staggered nodes)
-        ucalculated = similar(ustar)
         for i = 1:1:length(p.mesh.unodes)
             if p.mesh.unodes[i].backwardneighbor == 0 || p.mesh.unodes[i].forwardneighbor == 0
                 ucalculated[i] = ustar[i]
+                deltaus[i] = 0.0
             else
                 pprimewest = pprime[p.mesh.unodes[i].backwardneighbor]
                 pprimeeast = pprime[p.mesh.unodes[i].forwardneighbor]
-                ucalculated[i] = ustar[i] + du[i]*(pprimewest-pprimeeast)
+                ucalculated[i] = ustar[i] - du[i]*(pprimewest-pprimeeast)
+                deltaus[i] = abs(ucalculated[i]-ustar[i])
             end
             p.mesh.unodes[i].value = (1.0-p.urelax)*p.mesh.unodes[i].value + p.urelax*ucalculated[i]
         end
-        vcalculated = similar(vstar)
         for i = 1:1:length(p.mesh.vnodes)
             if p.mesh.vnodes[i].backwardneighbor == 0 || p.mesh.vnodes[i].forwardneighbor == 0
                 vcalculated[i] = vstar[i]
@@ -438,23 +445,13 @@ function steadysolve_2D!(p::SIMPLEProblem)
             p.mesh.vnodes[i].value = (1.0-p.vrelax)*p.mesh.vnodes[i].value + p.vrelax*vcalculated[i]
         end
 
-        #println(u1)
-        #for i = 1:1:n
-        #    println(p.mesh.pressurenodes[i].value)
-        #    #pos = p.mesh.unodes[i].position
-        #    #println(rho(pos)*p.mesh.unodes[i].value*A(pos))
-        #end
-        #println("velocity:")
-        #println(ustar)
-        #for i = 1:1:n-1
-        #    println(p.mesh.unodes[i].value)
-        #end
-
-        convergencecriteria = maximum(Au*ucalculated-Su)
-        println(convergencecriteria)
-        global testus, testvs = extractvelocities(problem)
-        global testPs = extractpressures(problem)
-        global p1 = heatmap(us)#,clims = (0,0.005))
-        global p2 = heatmap(vs)#,clims = (0,0.005))
+        convergencecriteria = maximum(deltaus)#maximum(Au*ucalculated-Su)
+        if itters/10 == round(itters/10)
+            println("Itteration $itters"*" with criteria: $convergencecriteria")
+            global testus, testvs = extractvelocities(problem)
+            global testPs = extractpressures(problem)
+            global p1 = heatmap(us)#,clims = (0,0.005))
+            global p2 = heatmap(vs)#,clims = (0,0.005))
+        end
     end
 end
