@@ -1,4 +1,4 @@
-using LinearAlgebra, Plots, FLOWMath
+using LinearAlgebra, Plots, FLOWMath, SparseArrays
 include("structs.jl")
 include("functions.jl")
 include("visualization.jl")
@@ -60,11 +60,12 @@ entrance = LabelBoundaryCondition("Left",uin)
 top = LabelBoundaryCondition("Top",0.0)
 bottom = LabelBoundaryCondition("Bottom",0.0)
 outlet = LabelBoundaryCondition("Right",P0)
-n = 40
-m = 16
-α_P =0.0005
-α_u = 0.0005
-α_v = 0.0005
+n = 500
+m = 25
+α = 0.0000075
+α_P =α/120
+α_u = α
+α_v = α/2
 
 function ρ(x)
     return 1000.0
@@ -73,11 +74,7 @@ function mu(x)
     return 0.001  
 end 
 function P(x) #A guess
-    if x[1] > 0.049999
-        return 0.0
-    else
-        return .001
-    end
+    return .007 - x[1]*(.007/L)
 end
 function u(x)
     return .001

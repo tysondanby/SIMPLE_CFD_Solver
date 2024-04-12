@@ -49,3 +49,19 @@ function extractpressures(p::SIMPLEProblem2D)
     end
     return Ps
 end
+
+function wallshear(p::SIMPLEProblem2D)
+    n = p.discretizationsettings.n
+    m = p.discretizationsettings.m
+    mu = mu = p.constantfunctions[2]([0.0,0.0,0.0])
+    dx = norm(p.mesh.unodes[1].position - p.mesh.unodes[m+1].position)
+    dy = norm(p.mesh.unodes[1].position - p.mesh.unodes[2].position)
+    tau = 0.0
+    tau = tau + mu*.5*dx*p.mesh.unodes[1].value/(dy/2)
+    tau = tau + mu*.5*dx*p.mesh.unodes[m].value/(dy/2)
+    for i = 2:1:n
+        tau = tau + mu*.5*dx*p.mesh.unodes[(i-1)*m+1].value/(dy/2)
+        tau = tau + mu*.5*dx*p.mesh.unodes[i*m].value/(dy/2)
+    end
+    return tau
+end
