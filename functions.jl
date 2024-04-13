@@ -10,3 +10,11 @@ end
 function linear(x)
     return x
 end
+
+function checkcoefficients(list)
+    for element in list
+        if element < 0.0
+            #@warn("Negative coefficient")
+        end
+    end
+end

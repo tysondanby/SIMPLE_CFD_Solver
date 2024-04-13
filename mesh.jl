@@ -73,8 +73,8 @@ function mesh!(problem::SIMPLEProblem2D)
     L = problem.geometry.length
     H = problem.geometry.height
     spacing = problem.discretizationsettings.spacingfunction #TODO: ONLY works for linear()
-    ptsn = collect(1/(2*n-1):2/(2*n-1):1)
-    ptsm = collect((1/(2*m)):1/m:(2*m - 1)/(2*m))
+    ptsn = collect(0:1/(n-1):1)#collect(1/(2*n-1):2/(2*n-1):1)
+    ptsm = collect(0:1/(m-1):1)#collect((1/(2*m)):1/m:(2*m - 1)/(2*m))
     pressurepoints = []
     upoints = []
     vpoints = []

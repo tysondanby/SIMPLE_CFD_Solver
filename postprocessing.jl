@@ -53,15 +53,31 @@ end
 function wallshear(p::SIMPLEProblem2D)
     n = p.discretizationsettings.n
     m = p.discretizationsettings.m
-    mu = mu = p.constantfunctions[2]([0.0,0.0,0.0])
+    mu = p.constantfunctions[2]([0.0,0.0,0.0])
     dx = norm(p.mesh.unodes[1].position - p.mesh.unodes[m+1].position)
     dy = norm(p.mesh.unodes[1].position - p.mesh.unodes[2].position)
     tau = 0.0
-    tau = tau + mu*.5*dx*p.mesh.unodes[1].value/(dy/2)
-    tau = tau + mu*.5*dx*p.mesh.unodes[m].value/(dy/2)
-    for i = 2:1:n
-        tau = tau + mu*.5*dx*p.mesh.unodes[(i-1)*m+1].value/(dy/2)
-        tau = tau + mu*.5*dx*p.mesh.unodes[i*m].value/(dy/2)
+    #tau = tau + mu*.5*dx*p.mesh.unodes[1].value/(dy/2)
+    #tau = tau + mu*.5*dx*p.mesh.unodes[m].value/(dy/2)
+    for i = 2:1:(n-1)
+        tau = tau + mu*dx*p.mesh.unodes[(i-1)*m+1].value/(dy/2)
+        tau = tau + mu*dx*p.mesh.unodes[i*m].value/(dy/2)
     end
     return tau
+end
+
+function pressureplot(p::SIMPLEProblem2D)
+    n = p.discretizationsettings.n
+    m = p.discretizationsettings.m
+    mu = mu = p.constantfunctions[2]([0.0,0.0,0.0])
+    dx = norm(p.mesh.unodes[1].position - p.mesh.unodes[m+1].position)
+    dy = norm(p.mesh.unodes[1].position - p.mesh.unodes[2].position)
+    Ps = []
+    xs = []
+    j = Int(round(m/2))
+    for i = 1:1:n
+        push!(xs,p.mesh.pressurenodes[(i-1)*m+j].position[1])
+        push!(Ps,p.mesh.pressurenodes[(i-1)*m+j].value)
+    end
+    return plot(xs*1000,Ps*1000,xlabel = "Axial Position (mm)",ylabel = "Pressure (mPa)")
 end

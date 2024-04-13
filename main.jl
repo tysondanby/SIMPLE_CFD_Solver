@@ -60,12 +60,13 @@ entrance = LabelBoundaryCondition("Left",uin)
 top = LabelBoundaryCondition("Top",0.0)
 bottom = LabelBoundaryCondition("Bottom",0.0)
 outlet = LabelBoundaryCondition("Right",P0)
-n = 500
-m = 25
-α = 0.0000075
-α_P =α/120
+grid = 30
+n = 5*grid
+m = 4*grid
+α = 0.5
+α_P =α
 α_u = α
-α_v = α/2
+α_v = α
 
 function ρ(x)
     return 1000.0
@@ -93,5 +94,6 @@ problem = SIMPLEProblem2D(geometry,boundaryconditions,settings,mesh,P,[ρ,mu],u,
 
 mesh!(problem)
 steadysolve_2D!(problem)
-#posp,ps = extractpressures(problem)#TODO
-#posu,us,posv,vs = extractvelocities(problem)#TODO
+p5 = heatmap(testus[:,2:end]*1000,aspect_ratio = 5/20,clims = (0,1.5),cbar_title = " \nHorizontal Velocity (mm/s)",right_margin=4Plots.mm,xticks = [],yticks=[], c = :jet1)
+p6 = heatmap(testvs[:,1:end]*1000,aspect_ratio = 5/20,clims = (-.35,.35),cbar_title = " \nVertical Velocity (mm/s)",right_margin=4Plots.mm,xticks = [],yticks=[], c = :jet1)
+p7 = heatmap(testPs[:,1:end]*1000,aspect_ratio = 5/20,clims = (0,8),cbar_title = " \nRelative Pressure (mPa)",right_margin=4Plots.mm,xticks = [],yticks=[], c = :jet1)
